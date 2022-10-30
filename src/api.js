@@ -23,6 +23,7 @@ function setBaseURL(ip) {
 	}
 }
 
+// eslint-disable-next-line no-undef
 if (typeof sato !== 'undefined' && sato.isPrinter === true) {
 	setBaseURL('localhost');
 } else {
@@ -53,6 +54,7 @@ let userDataCallback;
 let batchLabelCountCallback;
 let batchDoneCallback;
 let batchErrorCallback;
+let notifyCompleteCallback;
 
 function setPrinterState(status) {
 	let newState = printerState;
@@ -86,6 +88,10 @@ function setPrinterState(status) {
 }
 
 function hookBatchCallbacks(options) {
+	if (typeof options.notifyComplete == "function") {
+		notifyCompleteCallback = options.notifyComplete;
+    }
+	
 	if (typeof options.labelCount == "function") {
 		batchLabelCountCallback = options.labelCount;
 	}
@@ -98,6 +104,7 @@ function hookBatchCallbacks(options) {
 }
 
 function unhookBatchCallbacks() {
+	notifyCompleteCallback = undefined;
 	batchLabelCountCallback = undefined;
 	batchDoneCallback = undefined;
 	batchErrorCallback = undefined;
@@ -147,6 +154,11 @@ let keysEnum = {};
 let statusEnum = {};
 async function handleMessage(msg) {
 	switch (msg.type) {
+		case msgType.NOTIFY_COMPLETE:
+			if (typeof notifyCompleteCallback == "function") {
+        notifyCompleteCallback();
+			}
+			break;		
 		case msgType.STATUS:
 			internalState.currentState = statusEnum[msg.v];
 			setPrinterState(internalState);
@@ -298,6 +310,7 @@ export default {
 	 * }
 	 */
 	isPrinter() {
+    // eslint-disable-next-line no-undef
 		return typeof sato !== 'undefined' && sato.isPrinter === true;
 	},
 
